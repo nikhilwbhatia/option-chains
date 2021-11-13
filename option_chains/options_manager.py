@@ -53,8 +53,8 @@ class OptionsManager:
     def get_options_info(
         self,
         ticker: str,
-        percent_below_mkt: float,
-        percent_above_mkt: float,
+        percent_below_mkt: float = 0.05,
+        percent_above_mkt: float = 0.2,
         increment: int = 10,
         month_look_ahead: int = 3,
         hide_no_contracts: bool = True,
@@ -77,7 +77,11 @@ class OptionsManager:
         valid_expiry_dates = self.get_expiry_dates(ticker, month_look_ahead)
         log.info(f"Restricting search to {len(valid_expiry_dates)} valid expiry dates.")
 
-        valid_strikes = range(min_strike, max_strike, increment)
+        valid_strikes = [
+            strike
+            for strike in range(min_strike, max_strike)
+            if strike % increment == 0
+        ]
 
         valid_puts = []
         for date in valid_expiry_dates:
@@ -135,7 +139,9 @@ class OptionsManager:
         ]
 
     def process_put_object(self, put: typing.Dict, contracts_to_buy: int):
-        put["belowMarket"] = float(put["marketPrice"]) - float(put["strikePrice"])
+        put["belowMarketPct"] = (
+            float(put["marketPrice"]) - float(put["strikePrice"])
+        ) / float(put["marketPrice"])
 
         auxiliary_info = {}
 
@@ -156,8 +162,8 @@ class OptionsManager:
         auxiliary_info["annualizedRevenue"] = revenue * annualize_factor
 
         auxiliary_info["annualizedReturn"] = (
-            revenue / num_underlying_shares
-        ) / annualize_factor
+            (revenue / float(put["strikePrice"])) * annualize_factor / 100
+        )
 
         put["auxiliaryInfo"] = auxiliary_info
         return put
