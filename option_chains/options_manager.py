@@ -139,9 +139,11 @@ class OptionsManager:
         ]
 
     def process_put_object(self, put: typing.Dict, contracts_to_buy: int):
-        put["belowMarketPct"] = (
-            float(put["marketPrice"]) - float(put["strikePrice"])
-        ) / float(put["marketPrice"])
+        put["belowMarketPct"] = round(
+            (float(put["marketPrice"]) - float(put["strikePrice"]))
+            / float(put["marketPrice"]),
+            2,
+        )
 
         auxiliary_info = {}
 
@@ -155,14 +157,14 @@ class OptionsManager:
         contract_price = sum([float(put["bid"]), float(put["ask"])]) / 2
         num_underlying_shares = 100 * contracts_to_buy
         revenue = contract_price * num_underlying_shares
-        auxiliary_info["revenue"] = revenue
+        auxiliary_info["revenue"] = round(revenue, 2)
 
         days_to_hold = put["expiryDate"] - datetime.date.today()
         annualize_factor = 365 / days_to_hold.days
-        auxiliary_info["annualizedRevenue"] = revenue * annualize_factor
+        auxiliary_info["annualizedRevenue"] = int(revenue * annualize_factor)
 
-        auxiliary_info["annualizedReturn"] = (
-            (revenue / float(put["strikePrice"])) * annualize_factor / 100
+        auxiliary_info["annualizedReturn"] = round(
+            ((revenue / float(put["strikePrice"])) * annualize_factor / 100), 2
         )
 
         put["auxiliaryInfo"] = auxiliary_info

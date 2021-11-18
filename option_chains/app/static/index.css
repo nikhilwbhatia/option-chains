@@ -1,0 +1,37 @@
+body {
+    width: 100vw;
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    padding: 0px 20px;
+}
+
+.login-box {
+    width: 300px;
+    height: 300px;
+}
+
+.col-for-expiry {
+    margin: 20px;
+}
+
+.refresh-inputs {
+    margin: 40px 0px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.col-for-expiry-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.refresh-inputs-col {
+    margin: 0px 10px;
+}
+
+.refresh-inputs-container {
+    margin: 0px 0px;
+}
