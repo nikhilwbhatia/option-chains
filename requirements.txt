@@ -1,15 +1,15 @@
 black==21.10b0
 brotlipy==0.7.0
 certifi==2021.10.8
-cffi @ file:///opt/concourse/worker/volumes/live/976f8942-f51d-4f0e-7352-2a10f0820d0e/volume/cffi_1625814703974/work
-charset-normalizer @ file:///tmp/build/80754af9/charset-normalizer_1630003229654/work
+cffi==1.14.6
+charset-normalizer==2.0.4
 click==8.0.3
 conda==4.10.3
-conda-package-handling @ file:///opt/concourse/worker/volumes/live/8fb3e065-760b-4a9d-4cd9-aca7fc8baf53/volume/conda-package-handling_1618262145611/work
-cryptography @ file:///opt/concourse/worker/volumes/live/fd7fb473-543a-47f4-42b5-800791e25f0f/volume/cryptography_1635366586792/work
+conda-package-handling==1.7.3
+cryptography==35.0.0
 Flask==2.0.2
 gunicorn==20.1.0
-idna @ file:///tmp/build/80754af9/idna_1622654382723/work
+idna==3.2
 itsdangerous==2.0.1
 Jinja2==3.0.3
 jxmlease==1.0.3
@@ -19,22 +19,25 @@ numpy==1.21.4
 oauthlib==3.1.1
 pandas==1.3.4
 pathspec==0.9.0
+pip==21.2.4
 platformdirs==2.4.0
 pycosat==0.6.3
-pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
+pycparser==2.21
 pyetrade==1.2.0
-pyOpenSSL @ file:///tmp/build/80754af9/pyopenssl_1635333100036/work
-PySocks @ file:///opt/concourse/worker/volumes/live/112288ac-9cb0-4e73-768b-13baf4ca6419/volume/pysocks_1605305820043/work
+pyOpenSSL==21.0.0
+PySocks==1.7.1
 python-dateutil==2.8.2
 pytz==2021.3
 regex==2021.11.10
-requests @ file:///tmp/build/80754af9/requests_1629994808627/work
+requests==2.26.0
 requests-oauthlib==1.3.0
-ruamel-yaml-conda @ file:///opt/concourse/worker/volumes/live/e81cf0fe-611a-498e-6e69-a7320057c1ac/volume/ruamel_yaml_1616016689696/work
-six @ file:///tmp/build/80754af9/six_1623709665295/work
+ruamel-yaml-conda==0.15.100
+setuptools==58.0.4
+six==1.16.0
 tomli==1.2.2
-tqdm @ file:///tmp/build/80754af9/tqdm_1635330843403/work
+tqdm==4.62.3
 typing_extensions==4.0.0
 urllib3==1.26.7
 Werkzeug==2.0.2
+wheel==0.37.0
 xmltodict==0.12.0
