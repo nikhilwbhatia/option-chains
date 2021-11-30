@@ -24,6 +24,14 @@
                       <input type="text" name="ticker" value='{{prior_form.get("ticker", defaults["ticker"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
                     </div>
                     <div class="input-group input-group-sm mb-3">
+                        <span class="input-group-text">Increment</span>
+                        <select name="increment" class="form-select" aria-label="Default select example">
+                            {% for increment in valid_increments %}
+                            <option value="{{increment}}" {{"selected" if increment == prior_form.get("increment", defaults["increment"])|int else ""}}>{{increment}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="input-group input-group-sm mb-3">
                       <span class="input-group-text">Min Strike %</span>
                       <input type="text" name="percent-below" value='{{prior_form.get("percent-below", defaults["percent-below"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
                     </div>

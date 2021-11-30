@@ -92,6 +92,7 @@ def index():
         options=options_dict,
         prior_form=dict(request.form),
         defaults=defaults,
+        valid_increments=options_manager.VALID_INCREMENTS,
     )
 
 
