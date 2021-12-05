@@ -50,8 +50,8 @@ def index():
 
     defaults = {
         "ticker": "GOOG",
-        "percent-below": 0.05,
-        "percent-above": 0.1,
+        "min_strike": 0.3,
+        "max_strike": 0.2,
         "increment": 100,
         "lookahead": 3,
         "contracts": 1,
@@ -65,12 +65,8 @@ def index():
     )
     result = manager.get_options_info(
         ticker=request.form.get("ticker", defaults["ticker"]),
-        percent_below_mkt=float(
-            request.form.get("percent-below", defaults["percent-below"])
-        ),
-        percent_above_mkt=float(
-            request.form.get("percent-above", defaults["percent-above"])
-        ),
+        min_strike=float(request.form.get("min_strike", defaults["min_strike"])),
+        max_strike=float(request.form.get("max_strike", defaults["max_strike"])),
         increment=int(request.form.get("increment", defaults["increment"])),
         month_look_ahead=int(request.form.get("lookahead", defaults["lookahead"])),
         hide_no_contracts=True,

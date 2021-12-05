@@ -5,6 +5,7 @@ import numpy as np
 import datetime
 import typing
 import logging
+from tenacity import retry, stop_after_attempt
 
 log = logging.getLogger(__name__)
 VALID_INCREMENTS = [0, 5, 10, 50, 100]
@@ -53,23 +54,30 @@ class OptionsManager:
     def get_options_info(
         self,
         ticker: str,
-        percent_below_mkt: float = 0.05,
-        percent_above_mkt: float = 0.2,
+        min_strike: float = 0.3,
+        max_strike: float = 0.2,
         increment: int = 10,
         month_look_ahead: int = 3,
         hide_no_contracts: bool = True,
         hide_no_interest: bool = True,
         contracts_to_buy: int = None,
     ):
-        assert 0 < percent_above_mkt < 1.0, "percent_below_mkt must be > 0 and < 1.0"
-        assert 0 < percent_below_mkt < 1.0, "percent_above_mkt must be > 0 and < 1.0"
+        assert (
+            0 < max_strike < 1.0
+        ), "max strike should be expressed as a percentage below market price (> 0 and < 1.0)"
+        assert (
+            0 < min_strike < 1.0
+        ), "min strike should be expressed as a percentage below market price (> 0 and < 1.0)"
+        assert (
+            min_strike > max_strike
+        ), "strikes should be expressed as a percentage below market price (and thus min_strike must be > max_strike)"
         assert (
             increment in VALID_INCREMENTS
         ), f"increment should be one {VALID_INCREMENTS}"
 
         mkt_price = self.get_market_price(ticker)
-        max_strike = int(mkt_price * (1 + percent_above_mkt))
-        min_strike = int(mkt_price * (1 - percent_below_mkt))
+        max_strike = int(mkt_price * (1 - max_strike))
+        min_strike = int(mkt_price * (1 - min_strike))
         log.info(
             f"Restricting strike price to ({min_strike}, {max_strike}) for {mkt_price} market price."
         )
@@ -122,6 +130,7 @@ class OptionsManager:
 
         return [self.process_put_object(put, contracts_to_buy) for put in valid_puts]
 
+    @retry(stop=stop_after_attempt(5))
     def get_market_price(self, ticker: str) -> float:
         all_data = self.market.get_quote([ticker])["QuoteResponse"]["QuoteData"]["All"]
         return sum([float(all_data["bid"]), float(all_data["ask"])]) / 2

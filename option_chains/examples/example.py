@@ -34,8 +34,8 @@ def main():
     pprint.pprint(
         manager.get_options_info(
             ticker="GOOG",
-            percent_below_mkt=0.05,
-            percent_above_mkt=0.1,  # all arguments below have defaults and don't need to be passed
+            min_strike=0.05,
+            max_strike=0.1,  # all arguments below have defaults and don't need to be passed
             increment=100,
             month_look_ahead=3,
             hide_no_contracts=True,
