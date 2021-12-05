@@ -5,7 +5,14 @@ import numpy as np
 import datetime
 import typing
 import logging
-from tenacity import retry, stop_after_attempt
+
+import requests.exceptions
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    retry_if_exception_type,
+    wait_exponential,
+)
 
 log = logging.getLogger(__name__)
 VALID_INCREMENTS = [0, 5, 10, 50, 100]
@@ -130,7 +137,11 @@ class OptionsManager:
 
         return [self.process_put_object(put, contracts_to_buy) for put in valid_puts]
 
-    @retry(stop=stop_after_attempt(5))
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=0.1),
+        retry=retry_if_exception_type(requests.exceptions.HTTPError),
+    )
     def get_market_price(self, ticker: str) -> float:
         all_data = self.market.get_quote([ticker])["QuoteResponse"]["QuoteData"]["All"]
         return sum([float(all_data["bid"]), float(all_data["ask"])]) / 2
