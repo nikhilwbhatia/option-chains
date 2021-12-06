@@ -6,7 +6,7 @@ import pyetrade
 from option_chains import options_manager, constants
 import logging
 import datetime
-import pprint
+from pprint import pprint
 
 app = Flask(__name__)
 
@@ -27,6 +27,9 @@ def login():
 
 @app.route("/auth", methods=["POST"])
 def auth():
+    pprint(globals())
+    pprint(locals())
+    pprint(dir())
     verification_token = request.form["verificationToken"]
 
     tokens = oauth_object.get_access_token(verification_token)
