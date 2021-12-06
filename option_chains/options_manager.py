@@ -26,6 +26,7 @@ PUT_INFO_TO_INCLUDE = [
     "strikePrice",
     "symbol",
     "optionType",
+    "netChange",
 ]
 
 
@@ -140,7 +141,7 @@ class OptionsManager:
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential(multiplier=0.1),
-        retry=retry_if_exception_type(requests.exceptions.HTTPError),
+        reraise=True,
     )
     def get_market_price(self, ticker: str) -> float:
         all_data = self.market.get_quote([ticker])["QuoteResponse"]["QuoteData"]["All"]
@@ -161,8 +162,9 @@ class OptionsManager:
     def process_put_object(self, put: typing.Dict, contracts_to_buy: int):
         put["belowMarketPct"] = round(
             (float(put["marketPrice"]) - float(put["strikePrice"]))
-            / float(put["marketPrice"]),
-            2,
+            / float(put["marketPrice"])
+            * 100,
+            1,
         )
 
         auxiliary_info = {}
@@ -185,6 +187,10 @@ class OptionsManager:
 
         auxiliary_info["annualizedReturn"] = round(
             ((revenue / float(put["strikePrice"])) * annualize_factor / 100), 2
+        )
+
+        auxiliary_info["notionalPrinciple"] = round(
+            float(put["strikePrice"]) * 100 * contracts_to_buy
         )
 
         put["auxiliaryInfo"] = auxiliary_info

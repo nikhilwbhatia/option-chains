@@ -49,6 +49,11 @@
                     </div>
                     <button type="submit" class="btn-sm btn btn-outline-dark">Refresh</button>
                 </div>
+                <div class="general-info">
+                    <p>Market Price: ${{market_price}}</p>
+                    <p>Min Strike: ${{min_strike}}</p>
+                    <p>Max Strike: ${{max_strike}}</p>
+                </div>
             </div>
         </form>
     </div>
@@ -72,15 +77,16 @@
                             </tr>
                             <tr>
                                 <td>V: {{option_info["volume"]}}</td>
-                                <td colspan="3">OI: {{option_info["openInterest"]}}</td>
+                                <td>OI: {{option_info["openInterest"]}}</td>
+                                <td colspan="2">C: {{option_info["netChange"]}}</td>
                             </tr>
                             <tr>
                                 <td>SP: {{option_info["strikePrice"]}}</td>
-                                <td>MP: {{option_info["marketPrice"]}}</td>
-                                <td colspan="2">%B: {{option_info["belowMarketPct"]}}</td>
+                                <td>NP: {{"{:,.0f}".format(option_info["auxiliaryInfo"]["notionalPrinciple"])}}</td>
+                                <td colspan="2">BM: {{option_info["belowMarketPct"]}}%</td>
                             </tr>
                             <tr>
-                                <td>R: {{option_info["auxiliaryInfo"]["revenue"]}}</td>
+                                <td>$: {{option_info["auxiliaryInfo"]["revenue"]}}</td>
                                 <td>AR: {{option_info["auxiliaryInfo"]["annualizedRevenue"]}}</td>
                                 <td colspan="2">A%: {{option_info["auxiliaryInfo"]["annualizedReturn"]}}</td>
                             </tr>

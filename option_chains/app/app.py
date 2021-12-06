@@ -64,10 +64,14 @@ def index():
         oauth_token=oauth_token,
         oauth_secret=oauth_secret,
     )
+
+    ticker = request.form.get("ticker", defaults["ticker"])
+    min_strike = float(request.form.get("min_strike", defaults["min_strike"]))
+    max_strike = float(request.form.get("max_strike", defaults["max_strike"]))
     result = manager.get_options_info(
-        ticker=request.form.get("ticker", defaults["ticker"]),
-        min_strike=float(request.form.get("min_strike", defaults["min_strike"])),
-        max_strike=float(request.form.get("max_strike", defaults["max_strike"])),
+        ticker=ticker,
+        min_strike=min_strike,
+        max_strike=max_strike,
         increment=int(request.form.get("increment", defaults["increment"])),
         month_look_ahead=int(request.form.get("lookahead", defaults["lookahead"])),
         hide_no_contracts=True,
@@ -84,12 +88,21 @@ def index():
         for key, value in options_dict.items()
     }
 
+    # get market price to use in general stock info
+    market_price = manager.get_market_price(ticker)
+    # turn percentages into actual strike prices to use in general stock info
+    max_strike = int(float(market_price) * (1 - max_strike))
+    min_strike = int(float(market_price) * (1 - min_strike))
+
     return render_template(
         "index.html",
         options=options_dict,
         prior_form=dict(request.form),
         defaults=defaults,
         valid_increments=options_manager.VALID_INCREMENTS,
+        market_price=market_price,
+        max_strike=max_strike,
+        min_strike=min_strike,
     )
 
 
