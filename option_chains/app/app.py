@@ -8,11 +8,12 @@ import logging
 import datetime
 from pprint import pprint
 
-app = Flask(__name__)
-
 global oauth_object
 global oauth_token
 global oauth_secret
+
+
+app = Flask(__name__)
 
 
 @app.route("/login")
@@ -27,9 +28,6 @@ def login():
 
 @app.route("/auth", methods=["POST"])
 def auth():
-    pprint(globals())
-    pprint(locals())
-    pprint(dir())
     verification_token = request.form["verificationToken"]
 
     tokens = oauth_object.get_access_token(verification_token)
