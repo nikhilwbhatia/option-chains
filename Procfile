@@ -1,1 +1,1 @@
-web: gunicorn option_chains.app.wsgi:app
+web: gunicorn option_chains.app.wsgi:app --workers=1
