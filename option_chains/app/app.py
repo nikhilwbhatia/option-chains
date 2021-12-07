@@ -89,7 +89,7 @@ def index():
     }
 
     # get market price to use in general stock info
-    market_price = manager.get_market_price(ticker)
+    market_price = round(manager.get_market_price(ticker), 2)
     # turn percentages into actual strike prices to use in general stock info
     max_strike = int(float(market_price) * (1 - max_strike))
     min_strike = int(float(market_price) * (1 - min_strike))

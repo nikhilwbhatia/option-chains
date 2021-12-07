@@ -15,7 +15,7 @@ from tenacity import (
 )
 
 log = logging.getLogger(__name__)
-VALID_INCREMENTS = [0, 5, 10, 50, 100]
+VALID_INCREMENTS = [0, 2.5, 5, 10, 50, 100]
 PUT_INFO_TO_INCLUDE = [
     "bid",
     "ask",
@@ -185,8 +185,9 @@ class OptionsManager:
         annualize_factor = 365 / days_to_hold.days
         auxiliary_info["annualizedRevenue"] = int(revenue * annualize_factor)
 
+        # (revenue / (strike * 100)) * annualize factor * 100 -- 100s cancel (expressed as %)
         auxiliary_info["annualizedReturn"] = round(
-            ((revenue / float(put["strikePrice"])) * annualize_factor / 100), 2
+            ((revenue / float(put["strikePrice"])) * annualize_factor), 2
         )
 
         auxiliary_info["notionalPrinciple"] = round(
