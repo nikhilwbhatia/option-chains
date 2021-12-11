@@ -64,7 +64,7 @@ class OptionsManager:
         ticker: str,
         min_strike: float = 0.3,
         max_strike: float = 0.2,
-        increment: int = 10,
+        increment: float = 10,
         month_look_ahead: int = 3,
         hide_no_contracts: bool = True,
         hide_no_interest: bool = True,

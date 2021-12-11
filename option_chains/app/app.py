@@ -72,7 +72,7 @@ def index():
         ticker=ticker,
         min_strike=min_strike,
         max_strike=max_strike,
-        increment=int(request.form.get("increment", defaults["increment"])),
+        increment=float(request.form.get("increment", defaults["increment"])),
         month_look_ahead=int(request.form.get("lookahead", defaults["lookahead"])),
         hide_no_contracts=True,
         hide_no_interest=True,

@@ -27,7 +27,7 @@
                         <span class="input-group-text">Increment</span>
                         <select name="increment" class="form-select" aria-label="Default select example">
                             {% for increment in valid_increments %}
-                            <option value="{{increment}}" {{"selected" if increment == prior_form.get("increment", defaults["increment"])|int else ""}}>{{increment}}</option>
+                            <option value="{{increment}}" {{"selected" if increment == prior_form.get("increment", defaults["increment"])|float else ""}}>{{increment}}</option>
                             {% endfor %}
                         </select>
                     </div>
