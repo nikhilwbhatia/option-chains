@@ -32,11 +32,11 @@
                         </select>
                     </div>
                     <div class="input-group input-group-sm mb-3">
-                      <span class="input-group-text">Min Strike %</span>
+                      <span class="input-group-text">Min Strike (%)</span>
                       <input type="text" name="min_strike" value='{{prior_form.get("min_strike", defaults["min_strike"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
                     </div>
                     <div class="input-group input-group-sm mb-3">
-                      <span class="input-group-text">Max Strike %</span>
+                      <span class="input-group-text">Max Strike (%)</span>
                       <input type="text" name="max_strike" value='{{prior_form.get("max_strike", defaults["max_strike"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
                     </div>
                     <div class="input-group input-group-sm mb-3">
@@ -54,6 +54,10 @@
                     <div class="input-group input-group-sm mb-3">
                       <span class="input-group-text">Min Open Interest</span>
                       <input type="text" name="min_open_interest" value='{{prior_form.get("min_open_interest", defaults["min_open_interest"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+                    </div>
+                    <div class="input-group input-group-sm mb-3">
+                      <span class="input-group-text">Min Annualized Return (%)</span>
+                      <input type="text" name="min_annualized_return" value='{{prior_form.get("min_annualized_return", defaults["min_annualized_return"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
                     </div>
                     <button type="submit" class="btn-sm btn btn-outline-dark">Refresh</button>
                 </div>

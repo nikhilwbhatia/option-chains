@@ -5,7 +5,7 @@ import numpy as np
 import datetime
 import typing
 import logging
-
+from pprint import pprint
 import requests.exceptions
 from tenacity import (
     retry,
@@ -62,20 +62,21 @@ class OptionsManager:
     def get_options_info(
         self,
         ticker: str,
-        min_strike: float = 0.3,
-        max_strike: float = 0.2,
+        min_strike: float = 30,
+        max_strike: float = 20,
         increment: float = 10,
         month_look_ahead: int = 3,
         min_volume: int = 1,
         min_open_interest: int = 1,
+        min_annualized_return: float = 0.0,
         contracts_to_buy: int = None,
     ):
         assert (
-            0 < max_strike < 1.0
-        ), "max strike should be expressed as a percentage below market price (> 0 and < 1.0)"
+            0 < max_strike < 100
+        ), "max strike should be expressed as a percentage below market price (> 0 and < 100)"
         assert (
-            0 < min_strike < 1.0
-        ), "min strike should be expressed as a percentage below market price (> 0 and < 1.0)"
+            0 < min_strike < 100
+        ), "min strike should be expressed as a percentage below market price (> 0 and < 100)"
         assert (
             min_strike > max_strike
         ), "strikes should be expressed as a percentage below market price (and thus min_strike must be > max_strike)"
@@ -84,8 +85,10 @@ class OptionsManager:
         ), f"increment should be one {VALID_INCREMENTS}"
 
         mkt_price = self.get_market_price(ticker)
-        max_strike = int(mkt_price * (1 - max_strike))
-        min_strike = int(mkt_price * (1 - min_strike))
+
+        # convert min and max strike from percentage to decimal
+        max_strike = int(mkt_price * (1 - (max_strike / 100)))
+        min_strike = int(mkt_price * (1 - (min_strike / 100)))
         log.info(
             f"Restricting strike price to ({min_strike}, {max_strike}) for {mkt_price} market price."
         )
@@ -120,12 +123,19 @@ class OptionsManager:
             f"Found {len(valid_puts)} options for specified expiry dates and strikes."
         )
 
+        # augment put objects with custom calculated fields
+        valid_puts = [
+            self.process_put_object(put, contracts_to_buy) for put in valid_puts
+        ]
+
+        # filter based on min volume
         check = lambda put: int(put["volume"]) >= min_volume
         invalid_puts = [put for put in valid_puts if not check(put)]
         valid_puts = [put for put in valid_puts if check(put)]
         if invalid_puts:
             log.info(f"Hiding {len(invalid_puts)} puts due to min volume filter.")
 
+        # filter based on min open interest
         check = lambda put: int(put["openInterest"]) >= min_open_interest
         invalid_puts = [put for put in valid_puts if not check(put)]
         valid_puts = [put for put in valid_puts if check(put)]
@@ -134,9 +144,21 @@ class OptionsManager:
                 f"Hiding {len(invalid_puts)} puts due to min open interest filter."
             )
 
+        # filter based on min annualized return
+        check = (
+            lambda put: float(put["auxiliaryInfo"]["annualizedReturn"])
+            >= min_annualized_return
+        )
+        invalid_puts = [put for put in valid_puts if not check(put)]
+        valid_puts = [put for put in valid_puts if check(put)]
+        if invalid_puts:
+            log.info(
+                f"Hiding {len(invalid_puts)} puts due to min annualized return filter."
+            )
+
         log.info(f"Returning {len(valid_puts)} valid options.")
 
-        return [self.process_put_object(put, contracts_to_buy) for put in valid_puts]
+        return valid_puts
 
     @retry(
         stop=stop_after_attempt(5),

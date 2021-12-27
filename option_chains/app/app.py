@@ -51,13 +51,14 @@ def index():
 
     defaults = {
         "ticker": "GOOG",
-        "min_strike": 0.3,
-        "max_strike": 0.2,
+        "min_strike": 30,
+        "max_strike": 20,
         "increment": 100,
         "lookahead": 3,
         "contracts": 1,
         "min_volume": 1,
         "min_open_interest": 1,
+        "min_annualized_return": 0.0,
     }
 
     manager = options_manager.OptionsManager(
@@ -74,6 +75,9 @@ def index():
     min_open_interest = int(
         request.form.get("min_open_interest", defaults["min_open_interest"])
     )
+    min_annualized_return = float(
+        request.form.get("min_annualized_return", defaults["min_annualized_return"])
+    )
     result = manager.get_options_info(
         ticker=ticker,
         min_strike=min_strike,
@@ -82,6 +86,7 @@ def index():
         month_look_ahead=int(request.form.get("lookahead", defaults["lookahead"])),
         min_volume=min_volume,
         min_open_interest=min_open_interest,
+        min_annualized_return=min_annualized_return,
         contracts_to_buy=int(request.form.get("contracts", defaults["contracts"])),
     )
 
@@ -96,9 +101,10 @@ def index():
 
     # get market price to use in general stock info
     market_price = round(manager.get_market_price(ticker), 2)
-    # turn percentages into actual strike prices to use in general stock info
-    max_strike = int(float(market_price) * (1 - max_strike))
-    min_strike = int(float(market_price) * (1 - min_strike))
+
+    # TODO: remove duplicate code (original in options_manager.py)
+    max_strike = int(float(market_price) * (1 - (max_strike / 100)))
+    min_strike = int(float(market_price) * (1 - (min_strike / 100)))
 
     return render_template(
         "index.html",
