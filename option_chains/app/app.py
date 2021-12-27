@@ -56,6 +56,8 @@ def index():
         "increment": 100,
         "lookahead": 3,
         "contracts": 1,
+        "min_volume": 1,
+        "min_open_interest": 1,
     }
 
     manager = options_manager.OptionsManager(
@@ -68,14 +70,18 @@ def index():
     ticker = request.form.get("ticker", defaults["ticker"])
     min_strike = float(request.form.get("min_strike", defaults["min_strike"]))
     max_strike = float(request.form.get("max_strike", defaults["max_strike"]))
+    min_volume = int(request.form.get("min_volume", defaults["min_volume"]))
+    min_open_interest = int(
+        request.form.get("min_open_interest", defaults["min_open_interest"])
+    )
     result = manager.get_options_info(
         ticker=ticker,
         min_strike=min_strike,
         max_strike=max_strike,
         increment=float(request.form.get("increment", defaults["increment"])),
         month_look_ahead=int(request.form.get("lookahead", defaults["lookahead"])),
-        hide_no_contracts=True,
-        hide_no_interest=True,
+        min_volume=min_volume,
+        min_open_interest=min_open_interest,
         contracts_to_buy=int(request.form.get("contracts", defaults["contracts"])),
     )
 

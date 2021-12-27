@@ -66,8 +66,8 @@ class OptionsManager:
         max_strike: float = 0.2,
         increment: float = 10,
         month_look_ahead: int = 3,
-        hide_no_contracts: bool = True,
-        hide_no_interest: bool = True,
+        min_volume: int = 1,
+        min_open_interest: int = 1,
         contracts_to_buy: int = None,
     ):
         assert (
@@ -120,19 +120,19 @@ class OptionsManager:
             f"Found {len(valid_puts)} options for specified expiry dates and strikes."
         )
 
-        if hide_no_contracts:
-            check = lambda put: int(put["volume"]) != 0
-            invalid_puts = [put for put in valid_puts if not check(put)]
-            valid_puts = [put for put in valid_puts if check(put)]
-            if invalid_puts:
-                log.info(f"Hiding {len(invalid_puts)} puts due to no volume.")
+        check = lambda put: int(put["volume"]) >= min_volume
+        invalid_puts = [put for put in valid_puts if not check(put)]
+        valid_puts = [put for put in valid_puts if check(put)]
+        if invalid_puts:
+            log.info(f"Hiding {len(invalid_puts)} puts due to min volume filter.")
 
-        if hide_no_interest:
-            check = lambda put: int(put["openInterest"]) != 0
-            invalid_puts = [put for put in valid_puts if not check(put)]
-            valid_puts = [put for put in valid_puts if check(put)]
-            if invalid_puts:
-                log.info(f"Hiding {len(invalid_puts)} puts due to no open interest.")
+        check = lambda put: int(put["openInterest"]) >= min_open_interest
+        invalid_puts = [put for put in valid_puts if not check(put)]
+        valid_puts = [put for put in valid_puts if check(put)]
+        if invalid_puts:
+            log.info(
+                f"Hiding {len(invalid_puts)} puts due to min open interest filter."
+            )
 
         log.info(f"Returning {len(valid_puts)} valid options.")
 
