@@ -1,12 +1,10 @@
-from flask import Flask
-from flask import render_template, redirect, url_for, request
 from collections import defaultdict
 
 import pyetrade
+from flask import Flask
+from flask import render_template, redirect, url_for, request
+
 from option_chains import options_manager, constants
-import logging
-import datetime
-from pprint import pprint
 
 global oauth_object
 global oauth_token
@@ -99,8 +97,12 @@ def index():
         for key, value in options_dict.items()
     }
 
-    # get market price to use in general stock info
-    market_price = round(manager.get_market_price(ticker), 2)
+    # get market data values for ticker to use in general stock info
+    market_price = round(manager.get_market_data(ticker).market_price, 2)
+    high_52 = round(manager.get_market_data(ticker).high_52, 2)
+    low_52 = round(manager.get_market_data(ticker).low_52, 2)
+    beta = round(manager.get_market_data(ticker).beta, 2)
+    next_earnings_date = manager.get_market_data(ticker).next_earnings_date
 
     # TODO: remove duplicate code (original in options_manager.py)
     max_strike = int(float(market_price) * (1 - (max_strike / 100)))
@@ -113,6 +115,10 @@ def index():
         defaults=defaults,
         valid_increments=options_manager.VALID_INCREMENTS,
         market_price=market_price,
+        high_52=high_52,
+        low_52=low_52,
+        beta=beta,
+        next_earnings_date=next_earnings_date,
         max_strike=max_strike,
         min_strike=min_strike,
     )

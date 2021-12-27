@@ -1,16 +1,12 @@
-import collections
+import datetime
+import logging
+import typing
+from dataclasses import dataclass
 
 import pyetrade
-import numpy as np
-import datetime
-import typing
-import logging
-from pprint import pprint
-import requests.exceptions
 from tenacity import (
     retry,
     stop_after_attempt,
-    retry_if_exception_type,
     wait_exponential,
 )
 
@@ -28,6 +24,16 @@ PUT_INFO_TO_INCLUDE = [
     "optionType",
     "netChange",
 ]
+
+
+@dataclass
+class MarketData:
+    ticker: str
+    market_price: float
+    high_52: float
+    low_52: float
+    beta: float
+    next_earnings_date: str
 
 
 class OptionsManager:
@@ -84,13 +90,13 @@ class OptionsManager:
             increment in VALID_INCREMENTS
         ), f"increment should be one {VALID_INCREMENTS}"
 
-        mkt_price = self.get_market_price(ticker)
+        market_price = self.get_market_data(ticker).market_price
 
         # convert min and max strike from percentage to decimal
-        max_strike = int(mkt_price * (1 - (max_strike / 100)))
-        min_strike = int(mkt_price * (1 - (min_strike / 100)))
+        max_strike = int(market_price * (1 - (max_strike / 100)))
+        min_strike = int(market_price * (1 - (min_strike / 100)))
         log.info(
-            f"Restricting strike price to ({min_strike}, {max_strike}) for {mkt_price} market price."
+            f"Restricting strike price to ({min_strike}, {max_strike}) for {market_price} market price."
         )
 
         valid_expiry_dates = self.get_expiry_dates(ticker, month_look_ahead)
@@ -116,7 +122,7 @@ class OptionsManager:
                         if key in PUT_INFO_TO_INCLUDE
                     }
                     put["expiryDate"] = date
-                    put["marketPrice"] = mkt_price
+                    put["marketPrice"] = market_price
                     valid_puts.append(put)
 
         log.info(
@@ -165,9 +171,16 @@ class OptionsManager:
         wait=wait_exponential(multiplier=0.1),
         reraise=True,
     )
-    def get_market_price(self, ticker: str) -> float:
+    def get_market_data(self, ticker: str) -> MarketData:
         all_data = self.market.get_quote([ticker])["QuoteResponse"]["QuoteData"]["All"]
-        return sum([float(all_data["bid"]), float(all_data["ask"])]) / 2
+        return MarketData(
+            ticker=ticker,
+            market_price=sum([float(all_data["bid"]), float(all_data["ask"])]) / 2,
+            high_52=float(all_data["high52"]),
+            low_52=float(all_data["low52"]),
+            beta=float(all_data["beta"]),
+            next_earnings_date=str(all_data["nextEarningDate"]),
+        )
 
     def get_expiry_dates(self, ticker: str, month_look_ahead: int = 3):
         dates = self.market.get_option_expire_date(underlier=ticker)[
