@@ -11,7 +11,7 @@ from tenacity import (
 )
 
 log = logging.getLogger(__name__)
-VALID_INCREMENTS = [0, 2.5, 5, 10, 50, 100]
+VALID_INCREMENTS = [1, 2.5, 5, 10, 50, 100]
 PUT_INFO_TO_INCLUDE = [
     "bid",
     "ask",
@@ -29,6 +29,7 @@ PUT_INFO_TO_INCLUDE = [
 @dataclass
 class MarketData:
     ticker: str
+    company_name: str
     market_price: float
     high_52: float
     low_52: float
@@ -172,9 +173,12 @@ class OptionsManager:
         reraise=True,
     )
     def get_market_data(self, ticker: str) -> MarketData:
-        all_data = self.market.get_quote([ticker])["QuoteResponse"]["QuoteData"]["All"]
+        all_data = self.market.get_quote([ticker], require_earnings_date=True)[
+            "QuoteResponse"
+        ]["QuoteData"]["All"]
         return MarketData(
             ticker=ticker,
+            company_name=str(all_data["companyName"]),
             market_price=sum([float(all_data["bid"]), float(all_data["ask"])]) / 2,
             high_52=float(all_data["high52"]),
             low_52=float(all_data["low52"]),

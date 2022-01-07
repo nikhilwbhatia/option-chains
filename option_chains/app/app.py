@@ -98,11 +98,13 @@ def index():
     }
 
     # get market data values for ticker to use in general stock info
-    market_price = round(manager.get_market_data(ticker).market_price, 2)
-    high_52 = round(manager.get_market_data(ticker).high_52, 2)
-    low_52 = round(manager.get_market_data(ticker).low_52, 2)
-    beta = round(manager.get_market_data(ticker).beta, 2)
-    next_earnings_date = manager.get_market_data(ticker).next_earnings_date
+    market_data = manager.get_market_data(ticker)
+    company_name = market_data.company_name
+    market_price = round(market_data.market_price, 2)
+    high_52 = round(market_data.high_52, 2)
+    low_52 = round(market_data.low_52, 2)
+    beta = round(market_data.beta, 2)
+    next_earnings_date = market_data.next_earnings_date
 
     # TODO: remove duplicate code (original in options_manager.py)
     max_strike = int(float(market_price) * (1 - (max_strike / 100)))
@@ -115,6 +117,7 @@ def index():
         defaults=defaults,
         valid_increments=options_manager.VALID_INCREMENTS,
         market_price=market_price,
+        company_name=company_name,
         high_52=high_52,
         low_52=low_52,
         beta=beta,
