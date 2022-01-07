@@ -17,23 +17,27 @@
     <title>Main</title>
 </head>
 <body>
-    {% with active="single" %}
+    {% with active="multi" %}
         {% include "navbar.html" %}
     {% endwith %}
     <div class="body-new">
         <div class="refresh-inputs-container">
-        <form action="{{ url_for('index') }}" method="post">
+        <form action="{{ url_for('multi') }}" method="post">
             <div class="refresh-inputs">
                 <div class="refresh-inputs-col">
                     <div class="input-group input-group-sm mb-3">
-                      <span class="input-group-text">Ticker</span>
-                      <input type="text" name="ticker" value='{{prior_form.get("ticker", defaults["ticker"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+                        <span class="input-group-text">Sector</span>
+                        <select name="sector" class="form-select" aria-label="Default select example">
+                            {% for sector in all_sectors %}
+                                <option value="{{sector}}" {{"selected" if sector == prior_form.get("sector", defaults["sector"]) else ""}}>{{sector}}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="input-group input-group-sm mb-3">
-                        <span class="input-group-text">Intvl</span>
-                        <select name="increment" class="form-select" aria-label="Default select example">
-                            {% for increment in valid_increments %}
-                            <option value="{{increment}}" {{"selected" if increment == prior_form.get("increment", defaults["increment"])|float else ""}}>{{increment}}</option>
+                        <span class="input-group-text">Sub-Sector</span>
+                        <select name="sub_sector" class="form-select" aria-label="Default select example">
+                            {% for sub_sector in all_sub_sectors %}
+                                <option value="{{sub_sector}}" {{"selected" if sub_sector == prior_form.get("sub_sector", defaults["sub_sector"]) else ""}}>{{sub_sector}}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -50,10 +54,6 @@
                       <input type="text" name="lookahead" value='{{prior_form.get("lookahead", defaults["lookahead"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
                     </div>
                     <div class="input-group input-group-sm mb-3">
-                      <span class="input-group-text">Contracts</span>
-                      <input type="text" name="contracts" value='{{prior_form.get("contracts", defaults["contracts"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
-                    </div>
-                    <div class="input-group input-group-sm mb-3">
                       <span class="input-group-text">Min Vol</span>
                       <input type="text" name="min_volume" value='{{prior_form.get("min_volume", defaults["min_volume"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
                     </div>
@@ -67,64 +67,30 @@
                     </div>
                     <button type="submit" class="btn-sm btn btn-outline-dark">Refresh</button>
                 </div>
-                <div class="general-info">
-                    <p>Name: {{company_name}}</p>
-                    <p>Price: ${{market_price}}</p>
-                    <p>Min Stk: ${{min_strike}}</p>
-                    <p>Max Stk: ${{max_strike}}</p>
-                    <p>52 Lo: ${{low_52}}</p>
-                    <p>52 Hi: ${{high_52}}</p>
-                    <p>Beta: {{beta}}</p>
-                    <p>NED: {{next_earnings_date}}</p>
-                </div>
             </div>
         </form>
     </div>
-        <div class="col-for-expiry-container">
-        {% for date, options in options.items() %}
-            <div class="col-for-expiry">
-                <table class="table table-dark table-striped">
-                    <tbody>
-                        <th scope="row" style="text-align: center">{{ date }}</th>
-                    </tbody>
-                </table>
-                {% for option_info in options %}
-                    <div>
-                        <table class="table table-bordered table-dark">
-                          <tbody>
-                            <tr>
-                                <td>{{option_info["symbol"]}}</td>
-                                <td>B: {{option_info["bid"]}}</td>
-                                <td>A: {{option_info["ask"]}}</td>
-                                <td>L: {{option_info["lastPrice"]}}</td>
-                            </tr>
-                            <tr>
-                                <td>V: {{option_info["volume"]}}</td>
-                                <td>OI: {{option_info["openInterest"]}}</td>
-                                <td colspan="2">C: {{option_info["netChange"]}}</td>
-                            </tr>
-                            <tr>
-                                <td>SP: {{option_info["strikePrice"]}}</td>
-                                <td>NP: {{"{:,.0f}".format(option_info["auxiliaryInfo"]["notionalPrinciple"])}}</td>
-                                <td colspan="2">BM: {{option_info["belowMarketPct"]}}%</td>
-                            </tr>
-                            <tr>
-                                <td>$: {{option_info["auxiliaryInfo"]["revenue"]}}</td>
-                                <td>A$: {{option_info["auxiliaryInfo"]["annualizedRevenue"]}}</td>
-                                <td colspan="2">A%: {{option_info["auxiliaryInfo"]["annualizedReturn"]}}%</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endfor %}
+        <div>
+            {{df | safe}}
+            <!--turn this into better table https://blog.miguelgrinberg.com/post/beautiful-interactive-tables-for-your-flask-templates-->
+
         </div>
     </div>
 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
+
+    {% block scripts %}
+      <script>
+        $(document).ready(function () {
+          $('#df').DataTable();
+        });
+      </script>
+    {% endblock %}
 </body>
 </html>
 

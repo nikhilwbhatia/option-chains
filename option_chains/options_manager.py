@@ -1,8 +1,11 @@
 import datetime
 import logging
+import pathlib
 import typing
 from dataclasses import dataclass
+from multiprocessing.dummy import Pool as ThreadPool
 
+import pandas as pd
 import pyetrade
 from tenacity import (
     retry,
@@ -66,6 +69,76 @@ class OptionsManager:
             dev=False,
         )
 
+    def get_csv_df(self):
+        sector_path = pathlib.Path(__file__).parent / "data" / "sectors.csv"
+        csv_df = pd.read_csv(sector_path)
+        csv_df.fillna("", inplace=True)
+        return csv_df
+
+    def get_all_options_info(
+        self,
+        sector="Communication Services",
+        sub_sector="Comm - Media & Ent",
+        min_strike: float = 30,
+        max_strike: float = 20,
+        month_look_ahead: int = 3,
+        min_volume: int = 1,
+        min_open_interest: int = 1,
+        min_annualized_return: float = 0.0,
+    ):
+        csv_df = self.get_csv_df()
+
+        # filter csv_df down by sector
+        csv_df = csv_df.loc[csv_df["Sector"] == sector]
+
+        # filter csv_df down by sub-sector (if any)
+        if sub_sector:
+            csv_df = csv_df.loc[csv_df["Sub-Sector"] == sub_sector]
+
+        # skip some buggy tickers
+        skip = ["NVR", "KSU"]
+        tickers = [ticker for ticker in csv_df["Ticker"].unique() if ticker not in skip]
+
+        def helper(ticker):
+            options_info = self.get_options_info(
+                ticker=ticker,
+                min_strike=min_strike,
+                max_strike=max_strike,
+                increment=1,
+                month_look_ahead=month_look_ahead,
+                min_volume=min_volume,
+                min_open_interest=min_open_interest,
+                min_annualized_return=min_annualized_return,
+            )
+            data = [
+                {
+                    key: value
+                    for key, value in option.items()
+                    if not isinstance(value, dict)
+                }
+                for option in options_info
+            ]
+            return pd.DataFrame(data)
+
+        thread_pool = ThreadPool(5)
+
+        results = thread_pool.map(helper, tickers)
+        df = pd.concat(results)
+
+        if not df.empty:
+            # add sector and sub-sector columns to final df
+            ticker_to_sector = dict(zip(csv_df["Ticker"], csv_df["Sector"]))
+            ticker_to_sub_sector = dict(zip(csv_df["Ticker"], csv_df["Sub-Sector"]))
+            df["sector"] = df["symbol"].map(ticker_to_sector)
+            df["sub_sector"] = df["symbol"].map(ticker_to_sub_sector)
+
+        return df
+
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=0.2),
+        reraise=True,
+    )
     def get_options_info(
         self,
         ticker: str,
@@ -90,18 +163,21 @@ class OptionsManager:
         assert (
             increment in VALID_INCREMENTS
         ), f"increment should be one {VALID_INCREMENTS}"
+        log.debug(f"Finding options for ticker: {ticker}")
 
         market_price = self.get_market_data(ticker).market_price
 
         # convert min and max strike from percentage to decimal
         max_strike = int(market_price * (1 - (max_strike / 100)))
         min_strike = int(market_price * (1 - (min_strike / 100)))
-        log.info(
+        log.debug(
             f"Restricting strike price to ({min_strike}, {max_strike}) for {market_price} market price."
         )
 
         valid_expiry_dates = self.get_expiry_dates(ticker, month_look_ahead)
-        log.info(f"Restricting search to {len(valid_expiry_dates)} valid expiry dates.")
+        log.debug(
+            f"Restricting search to {len(valid_expiry_dates)} valid expiry dates."
+        )
 
         valid_strikes = [
             strike
@@ -126,7 +202,7 @@ class OptionsManager:
                     put["marketPrice"] = market_price
                     valid_puts.append(put)
 
-        log.info(
+        log.debug(
             f"Found {len(valid_puts)} options for specified expiry dates and strikes."
         )
 
@@ -140,14 +216,14 @@ class OptionsManager:
         invalid_puts = [put for put in valid_puts if not check(put)]
         valid_puts = [put for put in valid_puts if check(put)]
         if invalid_puts:
-            log.info(f"Hiding {len(invalid_puts)} puts due to min volume filter.")
+            log.debug(f"Hiding {len(invalid_puts)} puts due to min volume filter.")
 
         # filter based on min open interest
         check = lambda put: int(put["openInterest"]) >= min_open_interest
         invalid_puts = [put for put in valid_puts if not check(put)]
         valid_puts = [put for put in valid_puts if check(put)]
         if invalid_puts:
-            log.info(
+            log.debug(
                 f"Hiding {len(invalid_puts)} puts due to min open interest filter."
             )
 
@@ -159,11 +235,11 @@ class OptionsManager:
         invalid_puts = [put for put in valid_puts if not check(put)]
         valid_puts = [put for put in valid_puts if check(put)]
         if invalid_puts:
-            log.info(
+            log.debug(
                 f"Hiding {len(invalid_puts)} puts due to min annualized return filter."
             )
 
-        log.info(f"Returning {len(valid_puts)} valid options.")
+        log.info(f"Found {len(valid_puts)} valid options for ticker {ticker}.")
 
         return valid_puts
 

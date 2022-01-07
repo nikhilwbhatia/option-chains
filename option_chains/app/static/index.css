@@ -1,4 +1,8 @@
 body {
+
+}
+
+.body-new {
     width: 100vw;
     display: flex;
     flex-direction: row;
@@ -38,4 +42,8 @@ body {
 
 .general-info {
     margin: 50px 10px 0px 10px
+}
+
+.table-condensed{
+  font-size: 12px;
 }
