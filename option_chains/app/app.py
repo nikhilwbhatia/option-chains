@@ -13,10 +13,18 @@ global oauth_secret
 
 app = Flask(__name__)
 
+"""
+Next steps:
+- add the other table columns
+- make the market api req in helper() and then add logic for increment
+- add logic for 52hi/lo and NED red zone
+"""
+
 
 @app.route("/login")
 def login():
-    redirect_page = request.args.get("redirect")
+    # if user navigates to /login (no redirect specified, default to index)
+    redirect_page = request.args.get("redirect", "index")
 
     global oauth_object
 
@@ -30,7 +38,8 @@ def login():
 
 @app.route("/auth", methods=["POST"])
 def auth():
-    redirect_page = request.args.get("redirect")
+    # don't use .get because redirect should always be set in /login
+    redirect_page = request.args["redirect"]
     verification_token = request.form["verificationToken"]
 
     tokens = oauth_object.get_access_token(verification_token)
