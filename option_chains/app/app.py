@@ -67,6 +67,7 @@ def index():
         "min_volume": 1,
         "min_open_interest": 1,
         "min_annualized_return": 0.0,
+        "include_next_earnings_date": "True",
     }
 
     manager = options_manager.OptionsManager(
@@ -94,6 +95,12 @@ def index():
             request.form.get("min_annualized_return", defaults["min_annualized_return"])
         ),
         contracts_to_buy=int(request.form.get("contracts", defaults["contracts"])),
+        include_next_earnings_date="True"
+        == (
+            request.form.get(
+                "include_next_earnings_date", defaults["include_next_earnings_date"]
+            )
+        ),
     )
 
     options_dict = defaultdict(list)
@@ -125,7 +132,7 @@ def index():
         defaults=defaults,
         valid_increments=options_manager.VALID_INCREMENTS,
         market_price=market_price,
-        company_name=company_name,
+        company_name=company_name[0:15],
         high_52=high_52,
         low_52=low_52,
         beta=beta,

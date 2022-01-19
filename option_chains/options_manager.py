@@ -150,6 +150,7 @@ class OptionsManager:
         min_open_interest: int = 1,
         min_annualized_return: float = 0.0,
         contracts_to_buy: int = None,
+        include_next_earnings_date: bool = True,
     ):
         assert (
             0 < max_strike < 100
@@ -174,7 +175,9 @@ class OptionsManager:
             f"Restricting strike price to ({min_strike}, {max_strike}) for {market_price} market price."
         )
 
-        valid_expiry_dates = self.get_expiry_dates(ticker, month_look_ahead)
+        valid_expiry_dates = self.get_expiry_dates(
+            ticker, month_look_ahead, include_next_earnings_date
+        )
         log.debug(
             f"Restricting search to {len(valid_expiry_dates)} valid expiry dates."
         )
@@ -262,7 +265,12 @@ class OptionsManager:
             next_earnings_date=str(all_data["nextEarningDate"]),
         )
 
-    def get_expiry_dates(self, ticker: str, month_look_ahead: int = 3):
+    def get_expiry_dates(
+        self,
+        ticker: str,
+        month_look_ahead: int = 3,
+        include_next_earnings_date: bool = True,
+    ):
         dates = self.market.get_option_expire_date(underlier=ticker)[
             "OptionExpireDateResponse"
         ]["ExpirationDate"]
@@ -271,7 +279,9 @@ class OptionsManager:
             datetime.date(
                 year=int(date["year"]), month=int(date["month"]), day=int(date["day"])
             )
-            for date in monthly_dates[:month_look_ahead]
+            for date in monthly_dates[
+                0 if include_next_earnings_date else 1 : month_look_ahead
+            ]
         ]
 
     def process_put_object(self, put: typing.Dict, contracts_to_buy: int):
