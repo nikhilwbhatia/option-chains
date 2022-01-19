@@ -66,7 +66,7 @@
                       <input type="text" name="min_annualized_return" value='{{prior_form.get("min_annualized_return", defaults["min_annualized_return"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
                     </div>
                     <div class="input-group input-group-sm mb-3">
-                      <label class="input-group-text" for="inputGroupSelect01">Incl NED</label>
+                      <label class="input-group-text" for="inputGroupSelect01">Incl NXD</label>
                       <select name="include_next_earnings_date" class="form-select" id="inputGroupSelect01">
                         {% for val in ['True', 'False'] %}
                             <option {{"selected" if prior_form.get("include_next_earnings_date", defaults["include_next_earnings_date"]) == val else ""}}>{{val}}</option>
