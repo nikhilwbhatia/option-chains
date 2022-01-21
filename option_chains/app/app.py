@@ -157,6 +157,8 @@ def multi():
         "min_volume": 1,
         "min_open_interest": 1,
         "min_annualized_return": 0.0,
+        "include_next_earnings_date": "True",
+        "percentile_of_52_range": 25,
     }
 
     manager = options_manager.OptionsManager(
@@ -169,6 +171,11 @@ def multi():
     df = manager.get_all_options_info(
         sector=request.form.get("sector", defaults["sector"]),
         sub_sector=request.form.get("sub_sector", defaults["sub_sector"]),
+        percentile_of_52_range=int(
+            request.form.get(
+                "percentile_of_52_range", defaults["percentile_of_52_range"]
+            )
+        ),
         min_strike=float(request.form.get("min_strike", defaults["min_strike"])),
         max_strike=float(request.form.get("max_strike", defaults["max_strike"])),
         month_look_ahead=int(request.form.get("lookahead", defaults["lookahead"])),
@@ -178,6 +185,12 @@ def multi():
         ),
         min_annualized_return=float(
             request.form.get("min_annualized_return", defaults["min_annualized_return"])
+        ),
+        include_next_earnings_date="True"
+        == (
+            request.form.get(
+                "include_next_earnings_date", defaults["include_next_earnings_date"]
+            )
         ),
     )
 

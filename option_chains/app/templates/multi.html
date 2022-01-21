@@ -65,6 +65,18 @@
                       <span class="input-group-text">Min AR %</span>
                       <input type="text" name="min_annualized_return" value='{{prior_form.get("min_annualized_return", defaults["min_annualized_return"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
                     </div>
+                    <div class="input-group input-group-sm mb-3">
+                      <label class="input-group-text" for="inputGroupSelect01">Incl NXD</label>
+                      <select name="include_next_earnings_date" class="form-select" id="inputGroupSelect01">
+                        {% for val in ['True', 'False'] %}
+                            <option {{"selected" if prior_form.get("include_next_earnings_date", defaults["include_next_earnings_date"]) == val else ""}}>{{val}}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="input-group input-group-sm mb-3">
+                      <span class="input-group-text">52 Range Pctl</span>
+                      <input type="text" name="percentile_of_52_range" value='{{prior_form.get("percentile_of_52_range", defaults["percentile_of_52_range"])}}' class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-sm">
+                    </div>
                     <button type="submit" class="btn-sm btn btn-outline-dark">Refresh</button>
                 </div>
             </div>

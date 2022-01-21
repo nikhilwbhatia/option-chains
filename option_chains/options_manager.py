@@ -79,12 +79,14 @@ class OptionsManager:
         self,
         sector="Communication Services",
         sub_sector="Comm - Media & Ent",
+        percentile_of_52_range: int = 25,
         min_strike: float = 30,
         max_strike: float = 20,
         month_look_ahead: int = 3,
         min_volume: int = 1,
         min_open_interest: int = 1,
         min_annualized_return: float = 0.0,
+        include_next_earnings_date: bool = True,
     ):
         csv_df = self.get_csv_df()
 
@@ -100,6 +102,13 @@ class OptionsManager:
         tickers = [ticker for ticker in csv_df["Ticker"].unique() if ticker not in skip]
 
         def helper(ticker):
+            market_data = self.get_market_data(ticker)
+            range_52 = market_data.high_52 - market_data.low_52
+            if (
+                (market_data.market_price - market_data.low_52) / range_52
+            ) * 100 > percentile_of_52_range:
+                return pd.DataFrame()
+
             options_info = self.get_options_info(
                 ticker=ticker,
                 min_strike=min_strike,
@@ -109,15 +118,18 @@ class OptionsManager:
                 min_volume=min_volume,
                 min_open_interest=min_open_interest,
                 min_annualized_return=min_annualized_return,
+                include_next_earnings_date=include_next_earnings_date,
             )
-            data = [
-                {
-                    key: value
-                    for key, value in option.items()
-                    if not isinstance(value, dict)
-                }
-                for option in options_info
-            ]
+            data = []
+            for option in options_info:
+                option_data = {}
+                for key, value in option.items():
+                    if not isinstance(value, dict):
+                        option_data[key] = value
+                    elif key == "auxiliaryInfo":
+                        for inner_key, inner_val in value.items():
+                            option_data[inner_key] = inner_val
+                data.append(option_data)
             return pd.DataFrame(data)
 
         thread_pool = ThreadPool(5)
