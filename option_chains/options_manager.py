@@ -319,6 +319,10 @@ class OptionsManager:
         auxiliary_info["revenue"] = round(revenue, 2)
 
         days_to_hold = put["expiryDate"] - datetime.date.today()
+        print(put["expiryDate"])
+        print(datetime.date.today())
+        print(days_to_hold)
+        print(days_to_hold.days)
         annualize_factor = (365 / days_to_hold.days) if days_to_hold.days > 0 else 0
         auxiliary_info["annualizedRevenue"] = int(revenue * annualize_factor)
 
