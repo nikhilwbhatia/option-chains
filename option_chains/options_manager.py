@@ -4,6 +4,7 @@ import pathlib
 import typing
 from dataclasses import dataclass
 from multiprocessing.dummy import Pool as ThreadPool
+import pytz
 
 import pandas as pd
 import pyetrade
@@ -36,6 +37,7 @@ class MarketData:
     market_price: float
     high_52: float
     low_52: float
+    percentile_52: float
     beta: float
     next_earnings_date: str
 
@@ -93,7 +95,7 @@ class OptionsManager:
         # filter csv_df down by sector
         csv_df = csv_df.loc[csv_df["Sector"] == sector]
 
-        # filter csv_df down by sub-sector (if any)
+        # filter csv_df down by sub-sector (if None, don't filter)
         if sub_sector:
             csv_df = csv_df.loc[csv_df["Sub-Sector"] == sub_sector]
 
@@ -103,10 +105,8 @@ class OptionsManager:
 
         def helper(ticker):
             market_data = self.get_market_data(ticker)
-            range_52 = market_data.high_52 - market_data.low_52
-            if (
-                (market_data.market_price - market_data.low_52) / range_52
-            ) * 100 > percentile_of_52_range:
+
+            if market_data.percentile_52 * 100 > percentile_of_52_range:
                 return pd.DataFrame()
 
             options_info = self.get_options_info(
@@ -129,6 +129,11 @@ class OptionsManager:
                     elif key == "auxiliaryInfo":
                         for inner_key, inner_val in value.items():
                             option_data[inner_key] = inner_val
+                option_data["Company"] = market_data.company_name[0:15]
+                option_data["52%"] = market_data.percentile_52
+                option_data["52Lo"] = market_data.low_52
+                option_data["52Hi"] = market_data.high_52
+                option_data["NED"] = market_data.next_earnings_date
                 data.append(option_data)
             return pd.DataFrame(data)
 
@@ -141,8 +146,60 @@ class OptionsManager:
             # add sector and sub-sector columns to final df
             ticker_to_sector = dict(zip(csv_df["Ticker"], csv_df["Sector"]))
             ticker_to_sub_sector = dict(zip(csv_df["Ticker"], csv_df["Sub-Sector"]))
-            df["sector"] = df["symbol"].map(ticker_to_sector)
-            df["sub_sector"] = df["symbol"].map(ticker_to_sub_sector)
+            df["Sector"] = df["symbol"].map(ticker_to_sector)
+            df["Sub-Sector"] = df["symbol"].map(ticker_to_sub_sector)
+
+        # rename columns
+        df.rename(
+            columns={
+                "symbol": "Ticker",
+                "strikePrice": "Stk",
+                "bid": "B",
+                "ask": "A",
+                "volume": "V",
+                "openInterest": "OI",
+                "netChange": "C",
+                "lastPrice": "L",
+                "expiryDate": "Exp",
+                "marketPrice": "Price",
+                "annualizedReturn": "A%",
+                "annualizedRevenue": "A$",
+                "belowMarketPct": "BM",
+                "revenue": "$",
+                "notionalPrinciple": "NP",
+                "contractsToBuy": "NC",
+            },
+            inplace=True,
+        )
+
+        # drop some columns
+        df.drop(["optionType"], axis=1, inplace=True)
+
+        # reorder some columns
+        df_cols = df.columns.to_list()
+        new_cols = [
+            "Ticker",
+            "Company",
+            "52%",
+            "Price",
+            "Exp",
+            "Stk",
+            "BM",
+            "A%",
+            "$",
+            "NP",
+            "B",
+            "A",
+            "L",
+            "C",
+            "V",
+            "OI",
+            "52Lo",
+            "52Hi",
+            "NED",
+        ]
+        final_cols = [*new_cols, *[col for col in df_cols if col not in new_cols]]
+        df = df[final_cols]
 
         return df
 
@@ -161,7 +218,7 @@ class OptionsManager:
         min_volume: int = 1,
         min_open_interest: int = 1,
         min_annualized_return: float = 0.0,
-        contracts_to_buy: int = None,
+        contracts_to_buy: int = 1,
         include_next_earnings_date: bool = True,
     ):
         assert (
@@ -267,12 +324,19 @@ class OptionsManager:
         all_data = self.market.get_quote([ticker], require_earnings_date=True)[
             "QuoteResponse"
         ]["QuoteData"]["All"]
+
+        market_price = sum([float(all_data["bid"]), float(all_data["ask"])]) / 2
+        high_52 = float(all_data["high52"])
+        low_52 = float(all_data["low52"])
+        range_52 = high_52 - low_52
+        percentile_52 = round((market_price - low_52) / range_52, 2)
         return MarketData(
             ticker=ticker,
             company_name=str(all_data["companyName"]),
-            market_price=sum([float(all_data["bid"]), float(all_data["ask"])]) / 2,
-            high_52=float(all_data["high52"]),
-            low_52=float(all_data["low52"]),
+            market_price=market_price,
+            high_52=high_52,
+            low_52=low_52,
+            percentile_52=percentile_52,
             beta=float(all_data["beta"]),
             next_earnings_date=str(all_data["nextEarningDate"]),
         )
@@ -304,13 +368,11 @@ class OptionsManager:
             1,
         )
 
+        put["OptionGreeks"]["iv"] = round(float(put["OptionGreeks"]["iv"]), 2)
+
         auxiliary_info = {}
 
-        contracts_to_buy = (
-            min(contracts_to_buy, int(put["volume"]))
-            if contracts_to_buy
-            else int(put["volume"])
-        )
+        contracts_to_buy = min(contracts_to_buy, int(put["volume"]))
         auxiliary_info["contractsToBuy"] = contracts_to_buy
 
         contract_price = sum([float(put["bid"]), float(put["ask"])]) / 2
@@ -318,7 +380,9 @@ class OptionsManager:
         revenue = contract_price * num_underlying_shares
         auxiliary_info["revenue"] = round(revenue, 2)
 
-        days_to_hold = put["expiryDate"] - datetime.date.today()
+        tz = pytz.timezone("EST")
+        days_to_hold = put["expiryDate"] - tz.localize(datetime.datetime.now()).date()
+
         annualize_factor = (365 / days_to_hold.days) if days_to_hold.days > 0 else 0
         auxiliary_info["annualizedRevenue"] = int(revenue * annualize_factor)
 

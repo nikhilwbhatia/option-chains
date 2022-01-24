@@ -114,7 +114,7 @@ def index():
 
     # get market data values for ticker to use in general stock info
     market_data = manager.get_market_data(ticker)
-    company_name = market_data.company_name
+    company_name = market_data.company_name[0:15]
     market_price = round(market_data.market_price, 2)
     high_52 = round(market_data.high_52, 2)
     low_52 = round(market_data.low_52, 2)
@@ -132,7 +132,7 @@ def index():
         defaults=defaults,
         valid_increments=options_manager.VALID_INCREMENTS,
         market_price=market_price,
-        company_name=company_name[0:15],
+        company_name=company_name,
         high_52=high_52,
         low_52=low_52,
         beta=beta,
@@ -149,7 +149,7 @@ def multi():
 
     defaults = {
         "sector": "Communication Services",
-        "sub_sector": "Comm - Media & Ent",
+        "sub_sector": "All",
         "min_strike": 30,
         "max_strike": 20,
         "lookahead": 3,
@@ -168,9 +168,11 @@ def multi():
         oauth_secret=oauth_secret,
     )
 
+    # calc this one separately cuz easier to condition on "All"
+    sub_sector = request.form.get("sub_sector", defaults["sub_sector"])
     df = manager.get_all_options_info(
         sector=request.form.get("sector", defaults["sector"]),
-        sub_sector=request.form.get("sub_sector", defaults["sub_sector"]),
+        sub_sector=None if sub_sector == "All" else sub_sector,
         percentile_of_52_range=int(
             request.form.get(
                 "percentile_of_52_range", defaults["percentile_of_52_range"]
@@ -198,6 +200,8 @@ def multi():
     csv_df = manager.get_csv_df()
     all_sectors = sorted(list(set(csv_df["Sector"].to_list())))
     all_sub_sectors = sorted(list(set(csv_df["Sub-Sector"].to_list())))
+    all_sub_sectors.insert(0, "All")
+
     # # get {sector1: [sub_sector1, sub_sector2], sector2: [...]]
     # all_sub_sectors = {
     #     sector: list(set(csv_df[csv_df["Sector"] == sector]["Sub-Sector"].to_list()))

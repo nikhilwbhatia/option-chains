@@ -82,7 +82,7 @@
             </div>
         </form>
     </div>
-        <div>
+        <div style="margin-left: 20px">
             {{df | safe}}
             <!--turn this into better table https://blog.miguelgrinberg.com/post/beautiful-interactive-tables-for-your-flask-templates-->
 
@@ -99,7 +99,13 @@
     {% block scripts %}
       <script>
         $(document).ready(function () {
-          $('#df').DataTable();
+          $('#df').DataTable({
+            "pageLength": 100,
+            columnDefs: [
+                { "visible": false, "targets": 0 }
+            ],
+            "order": [[ 3, "asc" ], [ 2, "asc" ], [ 5, "asc" ], [ 6, "asc" ]],
+          });
         });
       </script>
     {% endblock %}
