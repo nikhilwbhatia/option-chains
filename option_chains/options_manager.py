@@ -173,7 +173,7 @@ class OptionsManager:
         )
 
         # drop some columns
-        df.drop(["optionType"], axis=1, inplace=True)
+        df.drop(["optionType", "NC", "A$"], axis=1, inplace=True)
 
         # reorder some columns
         df_cols = df.columns.to_list()
@@ -200,6 +200,10 @@ class OptionsManager:
         ]
         final_cols = [*new_cols, *[col for col in df_cols if col not in new_cols]]
         df = df[final_cols]
+
+        # modify format of columns
+        df["Exp"] = df["Exp"].apply(lambda dt: dt.strftime("%m/%d/%Y"))
+        df["52%"] = df["52%"].apply(lambda x: x * 100)
 
         return df
 
@@ -325,7 +329,9 @@ class OptionsManager:
             "QuoteResponse"
         ]["QuoteData"]["All"]
 
-        market_price = sum([float(all_data["bid"]), float(all_data["ask"])]) / 2
+        market_price = round(
+            sum([float(all_data["bid"]), float(all_data["ask"])]) / 2, 2
+        )
         high_52 = float(all_data["high52"])
         low_52 = float(all_data["low52"])
         range_52 = high_52 - low_52
