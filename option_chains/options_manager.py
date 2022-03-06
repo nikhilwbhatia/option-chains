@@ -210,10 +210,13 @@ class OptionsManager:
         df = df[final_cols]
 
         # modify format of columns
-        df["Exp"] = df["Exp"].apply(lambda dt: dt.strftime("%m/%d/%Y"))
+        df["Exp"] = df["Exp"].apply(lambda dt: dt.strftime("%m/%d/%y"))
+        df["NED"] = df["NED"].apply(
+            lambda dt: datetime.datetime.strptime(dt, "%m/%d/%Y").strftime("%m/%d/%y")
+        )
         df["52%"] = df["52%"].apply(lambda x: "{:.0%}".format(x))
-        df["BM"] = df["BM"].apply(lambda x: "{:.1%}".format(x))
-        df["A%"] = df["A%"].apply(lambda x: "{:.2%}".format(x))
+        df["BM"] = df["BM"].apply(lambda x: "{:.1%}".format(x) + " BM")
+        df["A%"] = df["A%"].apply(lambda x: "{:.2%}".format(x) + " A%")
         df["$"] = df["$"].apply(lambda x: "${:}".format(x))
         df["NP"] = df["NP"].apply(lambda x: "${:,}".format(x))
 
@@ -341,9 +344,7 @@ class OptionsManager:
             "QuoteResponse"
         ]["QuoteData"]["All"]
 
-        market_price = round(
-            sum([float(all_data["bid"]), float(all_data["ask"])]) / 2, 2
-        )
+        market_price = round(float(all_data["lastTrade"]), 2)
         high_52 = round(float(all_data["high52"]), 2)
         low_52 = round(float(all_data["low52"]), 2)
         range_52 = high_52 - low_52

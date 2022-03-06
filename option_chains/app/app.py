@@ -58,10 +58,10 @@ def index():
         return redirect(url_for("login", redirect="index"))
 
     defaults = {
-        "ticker": "GOOG",
+        "ticker": "SPY",
         "min_strike": 30,
         "max_strike": 20,
-        "increment": 100,
+        "increment": 1,
         "lookahead": 3,
         "contracts": 1,
         "min_volume": 1,
