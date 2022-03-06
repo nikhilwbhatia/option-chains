@@ -104,7 +104,12 @@ class OptionsManager:
         tickers = [ticker for ticker in csv_df["Ticker"].unique() if ticker not in skip]
 
         def helper(ticker):
-            market_data = self.get_market_data(ticker)
+            log.info(ticker)
+            try:
+                market_data = self.get_market_data(ticker)
+            except Exception as ex:
+                log.error(f"Skipping ticker '{ticker}' due to error: {ex}")
+                return pd.DataFrame()
 
             if market_data.percentile_52 * 100 > percentile_of_52_range:
                 return pd.DataFrame()
@@ -120,6 +125,7 @@ class OptionsManager:
                 min_annualized_return=min_annualized_return,
                 include_next_earnings_date=include_next_earnings_date,
             )
+
             data = []
             for option in options_info:
                 option_data = {}
@@ -142,12 +148,14 @@ class OptionsManager:
         results = thread_pool.map(helper, tickers)
         df = pd.concat(results)
 
-        if not df.empty:
-            # add sector and sub-sector columns to final df
-            ticker_to_sector = dict(zip(csv_df["Ticker"], csv_df["Sector"]))
-            ticker_to_sub_sector = dict(zip(csv_df["Ticker"], csv_df["Sub-Sector"]))
-            df["Sector"] = df["symbol"].map(ticker_to_sector)
-            df["Sub-Sector"] = df["symbol"].map(ticker_to_sub_sector)
+        if df.empty:
+            return pd.DataFrame()
+
+        # add sector and sub-sector columns to final df
+        ticker_to_sector = dict(zip(csv_df["Ticker"], csv_df["Sector"]))
+        ticker_to_sub_sector = dict(zip(csv_df["Ticker"], csv_df["Sub-Sector"]))
+        df["Sector"] = df["symbol"].map(ticker_to_sector)
+        df["Sub-Sector"] = df["symbol"].map(ticker_to_sub_sector)
 
         # rename columns
         df.rename(
@@ -208,7 +216,7 @@ class OptionsManager:
         return df
 
     @retry(
-        stop=stop_after_attempt(5),
+        stop=stop_after_attempt(10),
         wait=wait_exponential(multiplier=0.2),
         reraise=True,
     )
