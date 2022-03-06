@@ -211,7 +211,11 @@ class OptionsManager:
 
         # modify format of columns
         df["Exp"] = df["Exp"].apply(lambda dt: dt.strftime("%m/%d/%Y"))
-        df["52%"] = df["52%"].apply(lambda x: x * 100)
+        df["52%"] = df["52%"].apply(lambda x: "{:.0%}".format(x))
+        df["BM"] = df["BM"].apply(lambda x: "{:.1%}".format(x))
+        df["A%"] = df["A%"].apply(lambda x: "{:.2%}".format(x))
+        df["$"] = df["$"].apply(lambda x: "${:}".format(x))
+        df["NP"] = df["NP"].apply(lambda x: "${:,}".format(x))
 
         return df
 
@@ -340,8 +344,8 @@ class OptionsManager:
         market_price = round(
             sum([float(all_data["bid"]), float(all_data["ask"])]) / 2, 2
         )
-        high_52 = float(all_data["high52"])
-        low_52 = float(all_data["low52"])
+        high_52 = round(float(all_data["high52"]), 2)
+        low_52 = round(float(all_data["low52"]), 2)
         range_52 = high_52 - low_52
         percentile_52 = round((market_price - low_52) / range_52, 2)
         return MarketData(
@@ -377,9 +381,8 @@ class OptionsManager:
     def process_put_object(self, put: typing.Dict, contracts_to_buy: int):
         put["belowMarketPct"] = round(
             (float(put["marketPrice"]) - float(put["strikePrice"]))
-            / float(put["marketPrice"])
-            * 100,
-            1,
+            / float(put["marketPrice"]),
+            3,
         )
 
         put["OptionGreeks"]["iv"] = round(float(put["OptionGreeks"]["iv"]), 2)
@@ -400,9 +403,9 @@ class OptionsManager:
         annualize_factor = (365 / days_to_hold.days) if days_to_hold.days > 0 else 0
         auxiliary_info["annualizedRevenue"] = int(revenue * annualize_factor)
 
-        # (revenue / (strike * 100)) * annualize factor * 100 -- 100s cancel (expressed as %)
+        # (revenue / (strike * 100)) * annualize factor (expressed as decimal)
         auxiliary_info["annualizedReturn"] = round(
-            ((revenue / float(put["strikePrice"])) * annualize_factor), 2
+            ((revenue / (float(put["strikePrice"]) * 100)) * annualize_factor), 4
         )
 
         auxiliary_info["notionalPrinciple"] = round(
