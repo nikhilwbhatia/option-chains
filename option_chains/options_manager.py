@@ -8,10 +8,12 @@ import pytz
 
 import pandas as pd
 import pyetrade
+import requests.exceptions
 from tenacity import (
     retry,
     stop_after_attempt,
     wait_exponential,
+    retry_if_exception_type,
 )
 
 log = logging.getLogger(__name__)
@@ -104,7 +106,6 @@ class OptionsManager:
         tickers = [ticker for ticker in csv_df["Ticker"].unique() if ticker not in skip]
 
         def helper(ticker):
-            log.info(ticker)
             try:
                 market_data = self.get_market_data(ticker)
             except Exception as ex:
@@ -209,11 +210,15 @@ class OptionsManager:
         final_cols = [*new_cols, *[col for col in df_cols if col not in new_cols]]
         df = df[final_cols]
 
+        def process_ned(dt):
+            try:
+                return datetime.datetime.strptime(dt, "%m/%d/%Y").strftime("%m/%d/%y")
+            except Exception:
+                return dt
+
         # modify format of columns
         df["Exp"] = df["Exp"].apply(lambda dt: dt.strftime("%m/%d/%y"))
-        df["NED"] = df["NED"].apply(
-            lambda dt: datetime.datetime.strptime(dt, "%m/%d/%Y").strftime("%m/%d/%y")
-        )
+        df["NED"] = df["NED"].apply(process_ned)
         df["52%"] = df["52%"].apply(lambda x: "{:.0%}".format(x))
         df["BM"] = df["BM"].apply(lambda x: "{:.1%}".format(x) + " BM")
         df["A%"] = df["A%"].apply(lambda x: "{:.2%}".format(x) + " AR")
@@ -224,8 +229,9 @@ class OptionsManager:
 
     @retry(
         stop=stop_after_attempt(10),
-        wait=wait_exponential(multiplier=0.2),
+        wait=wait_exponential(multiplier=0.1),
         reraise=True,
+        retry=retry_if_exception_type(requests.exceptions.HTTPError),
     )
     def get_options_info(
         self,
@@ -278,9 +284,17 @@ class OptionsManager:
 
         valid_puts = []
         for date in valid_expiry_dates:
-            option_pairs_for_date = self.market.get_option_chains(
+            response = self.market.get_option_chains(
                 underlier=ticker, expiry_date=date
-            )["OptionChainResponse"]["OptionPair"]
+            )["OptionChainResponse"]
+
+            if "OptionPair" not in response.keys():
+                log.error(
+                    f"Skipping ticker '{ticker}' due to no 'OptionPair' key in response"
+                )
+                break
+
+            option_pairs_for_date = response["OptionPair"]
             for option_pair in option_pairs_for_date:
                 put = option_pair["Put"]
                 if int(float(put["strikePrice"])) in valid_strikes:
