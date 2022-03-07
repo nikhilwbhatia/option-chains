@@ -216,7 +216,7 @@ class OptionsManager:
         )
         df["52%"] = df["52%"].apply(lambda x: "{:.0%}".format(x))
         df["BM"] = df["BM"].apply(lambda x: "{:.1%}".format(x) + " BM")
-        df["A%"] = df["A%"].apply(lambda x: "{:.2%}".format(x) + " A%")
+        df["A%"] = df["A%"].apply(lambda x: "{:.2%}".format(x) + " AR")
         df["$"] = df["$"].apply(lambda x: "${:}".format(x))
         df["NP"] = df["NP"].apply(lambda x: "${:,}".format(x))
 

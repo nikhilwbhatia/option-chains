@@ -114,12 +114,12 @@
                             <tr>
                                 <td>SP: {{option_info["strikePrice"]}}</td>
                                 <td>NP: {{"{:,.0f}".format(option_info["auxiliaryInfo"]["notionalPrinciple"])}}</td>
-                                <td colspan="2">BM: {{option_info["belowMarketPct"]}}%</td>
+                                <td colspan="2">BM: {{"{:.1%}".format(option_info["belowMarketPct"])}}</td>
                             </tr>
                             <tr>
                                 <td>$: {{option_info["auxiliaryInfo"]["revenue"]}}</td>
                                 <td>IV: {{option_info["OptionGreeks"]["iv"]}}</td>
-                                <td colspan="2">A%: {{option_info["auxiliaryInfo"]["annualizedReturn"]}}%</td>
+                                <td colspan="2">A%: {{"{:.2%}".format(option_info["auxiliaryInfo"]["annualizedReturn"])}}</td>
                             </tr>
                           </tbody>
                         </table>
