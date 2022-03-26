@@ -2,12 +2,13 @@ import datetime
 import logging
 import pathlib
 import typing
+import xml.parsers.expat
 from dataclasses import dataclass
 from multiprocessing.dummy import Pool as ThreadPool
-import pytz
 
 import pandas as pd
 import pyetrade
+import pytz
 import requests.exceptions
 from tenacity import (
     retry,
@@ -91,6 +92,7 @@ class OptionsManager:
         min_open_interest: int = 1,
         min_annualized_return: float = 0.0,
         include_next_earnings_date: bool = True,
+        blue_chip_only: bool = False,
     ):
         csv_df = self.get_csv_df()
 
@@ -100,6 +102,9 @@ class OptionsManager:
         # filter csv_df down by sub-sector (if None, don't filter)
         if sub_sector:
             csv_df = csv_df.loc[csv_df["Sub-Sector"] == sub_sector]
+
+        if blue_chip_only:
+            csv_df = csv_df.loc[csv_df["Blue Chip"] == "Yes"]
 
         # skip some buggy tickers
         skip = ["NVR", "KSU"]
@@ -115,17 +120,21 @@ class OptionsManager:
             if market_data.percentile_52 * 100 > percentile_of_52_range:
                 return pd.DataFrame()
 
-            options_info = self.get_options_info(
-                ticker=ticker,
-                min_strike=min_strike,
-                max_strike=max_strike,
-                increment=1,
-                month_look_ahead=month_look_ahead,
-                min_volume=min_volume,
-                min_open_interest=min_open_interest,
-                min_annualized_return=min_annualized_return,
-                include_next_earnings_date=include_next_earnings_date,
-            )
+            try:
+                options_info = self.get_options_info(
+                    ticker=ticker,
+                    min_strike=min_strike,
+                    max_strike=max_strike,
+                    increment=1,
+                    month_look_ahead=month_look_ahead,
+                    min_volume=min_volume,
+                    min_open_interest=min_open_interest,
+                    min_annualized_return=min_annualized_return,
+                    include_next_earnings_date=include_next_earnings_date,
+                )
+            except xml.parsers.expat.ExpatError as ex:
+                log.error(f"Skipping {ticker} due to error: {ex}")
+                return pd.DataFrame()
 
             data = []
             for option in options_info:
@@ -144,7 +153,12 @@ class OptionsManager:
                 data.append(option_data)
             return pd.DataFrame(data)
 
-        thread_pool = ThreadPool(5)
+        thread_pool = ThreadPool(6)
+
+        ## sequential snippet for debugging
+        # results = []
+        # for i in tickers:
+        #     results.append(helper(i))
 
         results = thread_pool.map(helper, tickers)
         df = pd.concat(results)
@@ -336,6 +350,7 @@ class OptionsManager:
         check = (
             lambda put: float(put["auxiliaryInfo"]["annualizedReturn"])
             >= min_annualized_return
+            / 100  # GUI specifies percentage as 11 instead of .11
         )
         invalid_puts = [put for put in valid_puts if not check(put)]
         valid_puts = [put for put in valid_puts if check(put)]

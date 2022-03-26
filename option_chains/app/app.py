@@ -13,13 +13,6 @@ global oauth_secret
 
 app = Flask(__name__)
 
-"""
-Next steps:
-- add the other table columns
-- make the market api req in helper() and then add logic for increment
-- add logic for 52hi/lo and NED red zone
-"""
-
 
 @app.route("/login")
 def login():
@@ -159,6 +152,7 @@ def multi():
         "min_annualized_return": 0.0,
         "include_next_earnings_date": "True",
         "percentile_of_52_range": 25,
+        "blue_chip_only": "False",
     }
 
     manager = options_manager.OptionsManager(
@@ -194,6 +188,8 @@ def multi():
                 "include_next_earnings_date", defaults["include_next_earnings_date"]
             )
         ),
+        blue_chip_only="True"
+        == (request.form.get("blue_chip_only", defaults["blue_chip_only"])),
     )
 
     # get unique sectors/sub-sectors for use in dropdowns
