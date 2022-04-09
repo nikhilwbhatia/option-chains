@@ -96,8 +96,9 @@ class OptionsManager:
     ):
         csv_df = self.get_csv_df()
 
-        # filter csv_df down by sector
-        csv_df = csv_df.loc[csv_df["Sector"] == sector]
+        # filter csv_df down by sector (if None, don't filter)
+        if sector:
+            csv_df = csv_df.loc[csv_df["Sector"] == sector]
 
         # filter csv_df down by sub-sector (if None, don't filter)
         if sub_sector:
@@ -398,6 +399,11 @@ class OptionsManager:
         dates = self.market.get_option_expire_date(underlier=ticker)[
             "OptionExpireDateResponse"
         ]["ExpirationDate"]
+
+        if any(isinstance(date, str) for date in dates):
+            log.error(f"Skipping ticker '{ticker}' due to bad expiry dates: {dates}")
+            return []
+
         monthly_dates = [date for date in dates if date["expiryType"] == "MONTHLY"]
         return [
             datetime.date(

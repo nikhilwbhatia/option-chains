@@ -162,10 +162,10 @@ def multi():
         oauth_secret=oauth_secret,
     )
 
-    # calc this one separately cuz easier to condition on "All"
+    sector = request.form.get("sector", defaults["sector"])
     sub_sector = request.form.get("sub_sector", defaults["sub_sector"])
     df = manager.get_all_options_info(
-        sector=request.form.get("sector", defaults["sector"]),
+        sector=None if sector == "All" else sector,
         sub_sector=None if sub_sector == "All" else sub_sector,
         percentile_of_52_range=int(
             request.form.get(
@@ -195,6 +195,7 @@ def multi():
     # get unique sectors/sub-sectors for use in dropdowns
     csv_df = manager.get_csv_df()
     all_sectors = sorted(list(set(csv_df["Sector"].to_list())))
+    all_sectors.insert(0, "All")
     all_sub_sectors = sorted(list(set(csv_df["Sub-Sector"].to_list())))
     all_sub_sectors.insert(0, "All")
 
