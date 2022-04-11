@@ -48,3 +48,7 @@ body {
 .table-condensed{
   font-size: 12px;
 }
+
+.blue-column {
+    background-color: #ADD8E6 !important;
+}

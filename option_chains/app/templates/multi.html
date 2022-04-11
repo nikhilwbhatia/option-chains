@@ -110,7 +110,10 @@
           $('#df').DataTable({
             "pageLength": 100,
             columnDefs: [
-                { "visible": false, "targets": 0 }
+                { "visible": false, "targets": 0 },
+                { "className": "blue-column", "targets": 7 },
+                { "className": "blue-column", "targets": 8 },
+                { "className": "blue-column", "targets": 9 }
             ],
             "order": [[ 3, "asc" ], [ 2, "asc" ], [ 5, "asc" ], [ 6, "asc" ]],
           });
